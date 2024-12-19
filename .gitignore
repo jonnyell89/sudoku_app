@@ -5,5 +5,8 @@ __pycache__/
 # Ignore the virtual environment folder
 venv/
 
+# Ignore the development area
+app/demo.py
+
 # Ignore the legacy area
 app/legacy.py

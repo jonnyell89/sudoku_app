@@ -119,14 +119,15 @@ class Sudoku:
 
         return [row[col_index] for row in self.grid]
     
-    def get_subgrid(self, indices: Tuple[int, int]) -> List[int]:
+    def get_subgrid(self, row_index: int, col_index: int) -> List[int]:
 
         """
         Returns the subgrid containing the specified cell.
 
         Parameters:
 
-            indices (Tuple[int, int]): The row and col indices in the two-dimensional list matrix.
+            row_index (int): The index position of the row in the two-dimensional list matrix.
+            col_index (int): The index position of the column in the two-dimensional list matrix.
 
         Raises:
 
@@ -137,8 +138,6 @@ class Sudoku:
             List[int]: A list of integers representing a specific subgrid from the grid.
         
         """
-
-        row_index, col_index = indices
 
         if row_index not in range(9) or col_index not in range(9):
 
@@ -153,14 +152,15 @@ class Sudoku:
     
     # RECURSIVE BACKTRACK UTILITIES
 
-    def is_valid(self, indices: Tuple[int, int], num: int) -> bool:
+    def is_valid(self, row_index: int, col_index: int, num: int) -> bool:
 
         """
         Checks if a number placement at the specified indices is valid within the rules of Sudoku.
 
         Parameters:
 
-            indices (Tuple[int, int]): The row and col indices in the two-dimensional list matrix.
+            row_index (int): The index position of the row in the two-dimensional list matrix.
+            col_index (int): The index position of the column in the two-dimensional list matrix.
             num (int): The number to be checked, between 1 and 9.
 
         Raises:
@@ -172,8 +172,6 @@ class Sudoku:
             bool: True if the number placement is valid, otherwise False.
             
         """
-
-        row_index, col_index = indices
 
         if row_index not in range(9) or col_index not in range(9):
 
@@ -189,19 +187,20 @@ class Sudoku:
 
         col = self.get_col(col_index)
 
-        subgrid = self.get_subgrid(indices)
+        subgrid = self.get_subgrid(row_index, col_index)
 
         # Returns True if num is in row or num is in col or num is in subgrid
         return num not in row and num not in col and num not in subgrid
 
-    def populate_cell(self, indices: Tuple[int, int], num: int) -> bool:
+    def populate_cell(self, row_index: int, col_index: int, num: int) -> bool:
 
         """
         Places a number at the specified indices if the placement is valid and the cell is empty.
 
         Parameters:
 
-            indices (Tuple[int, int]): The row and col indices in the two-dimensional list matrix.
+            row_index (int): The index position of the row in the two-dimensional list matrix.
+            col_index (int): The index position of the column in the two-dimensional list matrix.
             num (int): The number to be placed, between 1 and 9.
         
         Returns:
@@ -210,9 +209,7 @@ class Sudoku:
 
         """
 
-        row_index, col_index = indices
-
-        if self.is_valid(indices, num) and self.grid[row_index][col_index] == 0:
+        if self.is_valid(row_index, col_index, num) and self.grid[row_index][col_index] == 0:
 
             self.grid[row_index][col_index] = num
 
@@ -220,18 +217,17 @@ class Sudoku:
         
         return False
 
-    def reset_cell(self, indices: Tuple[int, int]) -> None:
+    def reset_cell(self, row_index: int, col_index: int) -> None:
         
         """
         Resets the cell to zero at the specified indices.
 
         Parameters:
 
-            indices (Tuple[int, int]): The row and col indices in the two-dimensional list matrix.
+            row_index (int): The index position of the row in the two-dimensional list matrix.
+            col_index (int): The index position of the column in the two-dimensional list matrix.
         
         """
-
-        row_index, col_index = indices
 
         self.grid[row_index][col_index] = 0
 
@@ -276,8 +272,11 @@ class Sudoku:
         if not empty_cell:
 
             return True
+        
 
 
+        # Unpacks cell indices.
+        row_index, col_index = empty_cell
 
         nums = list(range(1, 10))
 
@@ -285,7 +284,7 @@ class Sudoku:
 
         for num in nums:
 
-            if self.populate_cell(empty_cell, num):
+            if self.populate_cell(row_index, col_index, num):
 
                 # Recursive step
                 if self.populate_grid():
@@ -293,7 +292,7 @@ class Sudoku:
                     return True
                 
                 # Backtrack
-                self.reset_cell(empty_cell)
+                self.reset_cell(row_index, col_index)
 
         return False
     
@@ -324,15 +323,20 @@ class Sudoku:
                 # Do not return True; continue backtracking.
                 return
             
+
+
+            # Upacks cell indices.
+            row_index, col_index = empty_cell
+            
             for num in range(1, 10):
 
-                if self.populate_cell(empty_cell, num):
+                if self.populate_cell(row_index, col_index, num):
 
                     # Recursive step
                     solve_sudoku()
 
                     # Backtrack
-                    self.reset_cell(empty_cell)
+                    self.reset_cell(row_index, col_index)
 
         # Starts the recursive process.
         solve_sudoku()
@@ -362,7 +366,16 @@ class Sudoku:
 
             for index in indices:
 
-                unit = get_unit(index)
+                # Unpacks subgrid indices.
+                if isinstance(index, tuple):
+
+                    row_index, col_index = index
+
+                    unit = get_unit(row_index, col_index)
+                
+                else:
+
+                    unit = get_unit(index)
 
                 if not self.is_unit_valid(unit):
                         
@@ -426,16 +439,16 @@ class Sudoku:
 
             ("rows", self.get_row, range(9)),
             ("cols", self.get_col, range(9)),
-            ("subgrids", self.get_subgrid, self._subgrid_indices())
+            ("subgrids", self.get_subgrid, self._get_subgrid_indices())
 
         ]
 
         return units
 
-    def _subgrid_indices(self) -> List[Tuple[int, int]]:
+    def _get_subgrid_indices(self) -> List[Tuple[int, int]]:
 
         """
-        Helper method: Provides the indices for the top-left cell in each individual subgrid.
+        Helper method: Returns the indices for the top-left cell in each individual subgrid.
 
         Returns:
 
@@ -443,7 +456,7 @@ class Sudoku:
         
         """
 
-        return [(x, y) for x in (0, 3, 6) for y in (0, 3, 6)]
+        return [(row_index, col_index) for row_index in (0, 3, 6) for col_index in (0, 3, 6)]
 
     # CELL REMOVAL
 
@@ -469,54 +482,155 @@ class Sudoku:
                     empty_cells += 1
 
         return empty_cells
+
+    def remove_cells(self, difficulty_level: str) -> bool:
+
+        """
+        Removes cells from the grid according to the difficulty level.
+
+        Parameters:
+
+            difficulty_level (str): The difficulty level of the Sudoku grid.
+                
+                Either "easy", "medium", "hard", or "expert".
+
+        Raises:
+
+            ValueError: If the difficulty level is invalid.
+
+        Returns:
+
+            bool: True if the cell removal process is successfully completed.
+        
+        """
+
+        # Accesses the empty cell difficulty range according to difficulty level.
+        difficulty_ranges = {
+
+            "easy": (45, 49),
+            "medium": (50, 54),
+            "hard": (55, 58),
+            "expert": (59, 64)
+
+        }
+
+        if difficulty_level not in difficulty_ranges:
+
+            raise ValueError(f"Invalid difficulty level: {difficulty_level}")
+        
+
+
+        difficulty_range = difficulty_ranges[difficulty_level]
+
+        removal_count = self._get_removal_count(difficulty_range)
+
+        grid_indices = self._get_grid_indices()
+
+        # Iterates over the unpacked grid indices.
+        for row_index, col_index in grid_indices:
+
+            # Break when the number of cells left to remove reaches zero.
+            if removal_count <= 0:
+
+                break
+
+            # Continue if the candidate cell is already empty.
+            if self._is_cell_empty(row_index, col_index):
+
+                continue
+
+            # Removes the candidate cell and updates the removal count.
+            removal_count = self._remove_cell(row_index, col_index, removal_count)
+        
+        # Returns True when the entire process is finished.
+        return True
     
+    def _is_cell_empty(self, row_index: int, col_index: int) -> bool:
 
+        """
+        Checks if the candidate cell is already empty.
 
-    """
-    def remove_cells(self, difficulty_level):
+        Parameters:
 
-        difficulty_levels = {
+            row_index (int): The index position of the row in the two-dimensional list matrix.
+            col_index (int): The index position of the column in the two-dimensional list matrix.
 
-            "easy": (36, 50),
-            "medium": (50, 55),
-            "hard": (55, 60),
-            "expert": (60, 70)
+        Returns:
 
-        }[difficulty_level]
+            bool: True if the candidate cell is already empty, otherwise False.
+        
+        """
 
-        if not difficulty_levels:
+        return self.grid[row_index][col_index] == 0
+    
+    def _remove_cell(self, row_index: int, col_index: int, removal_count: int) -> int:
 
-            raise ValueError(f"difficulty_level {difficulty_level} must be a valid dictionary key.")
+        """
+        Attempts to remove the candidate cell and decrements the removal count if the removal is successful.
 
-        i, j = difficulty_levels
+        Parameters:
 
-        cells_to_remove = random.randint(i, j)
+            row_index (int): The index position of the row in the two-dimensional list matrix.
+            col_index (int): The index position of the column in the two-dimensional list matrix.
+            removal_count (int): The current count of cells to remove.
 
-    """
+        Returns:
 
+            int: The updated count of cells to remove.
+        
+        """
 
+        # Stores the value of the candidate cell.
+        candidate_cell = self.grid[row_index][col_index]
 
-    def remove_cells(self, difficulty_level):
+        # Resets the candidate cell to zero.
+        self.reset_cell(row_index, col_index)
 
-        # Directly accesses the difficulty level.
-        difficulty_levels = {
+        # If there is more or less than one solution, restore the stored value.
+        if not self.count_solutions() == 1:
 
-            "easy": (36, 50),
-            "medium": (50, 55),
-            "hard": (55, 60),
-            "expert": (60, 70)
+            self.grid[row_index][col_index] = candidate_cell
 
-        }[difficulty_level]
+        # Otherwise, decrement the number of cells to remove.
+        else:
 
-        if not difficulty_levels:
+            removal_count -= 1
 
-            raise ValueError(f"difficulty_level {difficulty_level} must be a valid dictionary key.")
+        return removal_count
+
+    def _get_removal_count(self, difficulty_range: Tuple[int, int]) -> int:
+
+        """
+        Returns the count of cells to remove from the grid according to the difficulty level.
+
+        Parameters:
+
+            difficulty_range (Tuple[int, int]): The range that the count of cells to remove is randomly selected from.
+
+        Returns:
+
+            removal_count (int): The count of cells to remove. 
+        
+        """
 
         # Unpacks the difficulty level range.
-        i, j = difficulty_levels
+        min_remove, max_remove = difficulty_range
 
         # Randomly selects a number from within the difficulty level range.
-        cells_to_remove = random.randint(i, j)
+        removal_count = random.randint(min_remove, max_remove)
+
+        return removal_count
+
+    def _get_grid_indices(self) -> List[Tuple[int, int]]:
+
+        """
+        Generates and shuffles a list of all grid indices.
+
+        Returns:
+
+            List[Tuple[int, int]]: A shuffled list of grid indices.
+        
+        """
 
         # Generates all grid indices.
         grid_indices = [(row_index, col_index) for row_index in range(9) for col_index in range(9)]
@@ -524,43 +638,15 @@ class Sudoku:
         # Randomly shuffles the grid indices.
         random.shuffle(grid_indices)
 
-        # Iterates over the unpacked grid indices.
-        for row_index, col_index in grid_indices:
-
-            # Break when the number of cells left to remove reaches zero.
-            if cells_to_remove == 0:
-
-                break
-
-            # Stores the value at that specific cell.
-            temp = self.grid[row_index][col_index]
-
-            # Packs the grid indices.
-            indices = (row_index, col_index)
-
-            # Resets the specific cell to zero.
-            self.reset_cell(indices)
-
-            # If there is more or less than one solution, restore the stored value.
-            if not self.count_solutions() == 1:
-
-                self.grid[row_index][col_index] = temp
-
-            # Otherwise, decrement the number of cells to remove.
-            else:
-
-                cells_to_remove -= 1
-
-        # Returns True when the entire process is finished.
-        return True
-
+        return grid_indices
+    
 
 
 if __name__ == "__main__":
 
     print("--------------------")
 
-    sudoku = Sudoku(grid=master_grid)
+    sudoku = Sudoku(grid=easy_grid)
 
     sudoku.populate_grid()
 
@@ -568,6 +654,6 @@ if __name__ == "__main__":
 
     print("--------------------")
 
-    sudoku.remove_cells("medium")
+    sudoku.remove_cells("expert")
 
     sudoku.print_formatted_grid()
