@@ -10,3 +10,6 @@ app/demo.py
 
 # Ignore the legacy area
 app/legacy.py
+
+# Ignore sudoku/archive/
+/archive/
