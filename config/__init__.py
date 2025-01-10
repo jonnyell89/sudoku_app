@@ -1,7 +1,8 @@
-# from config.config import _
+from config.config import GRID_SIZE, SUBGRID_SIZE
 
 __all__ = [
 
-    "_"
+    "GRID_SIZE",
+    "SUBGRID_SIZE"
     
 ]

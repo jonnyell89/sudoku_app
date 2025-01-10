@@ -2,6 +2,7 @@ from typing import List, Tuple, Dict, Callable
 
 from app.grid import SudokuGrid
 from app.validator import SudokuValidator
+from config.config import SUBGRID_SIZE
 
 class SudokuIteration:
 
@@ -25,7 +26,7 @@ class SudokuIteration:
         self.grid = grid
         self.validator = validator
 
-    # LOGICAL DEDUCTION
+    # LOGICAL DEDUCTION    
 
     def placement_techniques(self) -> Dict[str, Dict[str, List]]:
 
@@ -75,7 +76,7 @@ class SudokuIteration:
 
             rotations += 1
 
-            remaining_cells = self.validator.count_empty_cells()
+            remaining_cells = self.grid.count_empty_cells()
             
             if not placement_made or remaining_cells == 0:
 
@@ -103,72 +104,15 @@ class SudokuIteration:
 
         techniques = [
 
+            ("only_containing_option", self.only_containing_option),
             ("naked_single", self.naked_single),
-            ("low_hanging_fruit", self.low_hanging_fruit),
             ("placement_by_adjacent_units", self.placement_by_adjacent_units)
 
         ]
 
         return techniques
-
-
-
-    def naked_single(self, row_index: int, col_index: int) -> bool:
-
-        """
-        Attempts to fill an empty cell using the 'naked single' technique.
-
-        A naked single is a cell that has only one possible value based on the numbers already present in its containing row, column and subgrid.
-
-        Parameters:
-
-            row_index (int): The index position of the row in the grid.
-            col_index (int): The index position of the column in the grid.
-
-        Returns:
-
-            bool: True if the cell was successfully filled, otherwise False.
-        
-        """
-
-        if not self.validator.is_cell_empty(row_index, col_index):
-
-            return False
-
-        containing_values = self.grid.get_containing_values(row_index, col_index)
-
-        remaining_values = self.grid.get_remaining_values(containing_values)
-
-        only_remaining_option = self.only_remaining_option(row_index, col_index, remaining_values)
-
-        return only_remaining_option
     
-    def only_remaining_option(self, row_index: int, col_index: int, remaining_values: List[int]) -> bool:
-
-        """
-        Attempts to place a value in the specified cell, if that value is the only possible value.
-
-        Parameters:
-
-            row_index (int): The index position of the row in the grid.
-            col_index (int): The index position of the column in the grid.
-            remaining_values (List[int]): A list of all remaining potential values for the specified cell.
-
-        Returns:
-
-            bool: True if the cell was successfully filled, otherwise False.
-        
-        """
-
-        if len(remaining_values) == 1:
-            
-            self.validator.populate_cell(row_index, col_index, remaining_values[0])
-
-            return True
-        
-        return False
-    
-    def low_hanging_fruit(self, row_index: int, col_index: int) -> bool:
+    def only_containing_option(self, row_index: int, col_index: int) -> bool:
 
         """
         Attempts to fill an empty cell if there is only one remaining option in any of its containing row, column or subgrid.
@@ -196,12 +140,65 @@ class SudokuIteration:
 
             remaining_values = self.grid.get_remaining_values(unit)
 
-            if self.only_remaining_option(row_index, col_index, remaining_values):
+            if self.only_possible_value(row_index, col_index, remaining_values):
 
                 return True
             
         return False
     
+    def only_possible_value(self, row_index: int, col_index: int, possible_values: List[int]) -> bool:
+
+        """
+        Attempts to fill the specified cell if there is only one possible value.
+
+        Parameters:
+
+            row_index (int): The index position of the row in the grid.
+            col_index (int): The index position of the column in the grid.
+            List[int]: A list of all possible values for the specified cell.
+
+        Returns:
+
+            bool: True if the cell was successfully filled, otherwise False.
+        
+        """
+
+        if len(possible_values) == 1:
+            
+            self.validator.populate_cell(row_index, col_index, possible_values[0])
+
+            return True
+        
+        return False
+
+    def naked_single(self, row_index: int, col_index: int) -> bool:
+
+        """
+        Attempts to fill an empty cell using the 'naked single' technique.
+
+        A naked single is a cell that has only one possible value based on the numbers already present in its containing row, column and subgrid.
+
+        Parameters:
+
+            row_index (int): The index position of the row in the grid.
+            col_index (int): The index position of the column in the grid.
+
+        Returns:
+
+            bool: True if the cell was successfully filled, otherwise False.
+        
+        """
+
+        if not self.grid.is_cell_empty(row_index, col_index):
+
+            return False
+
+        possible_values = self.grid.possible_values(row_index, col_index)
+
+        return self.only_possible_value(row_index, col_index, possible_values)
+
+
+
     def placement_by_adjacent_units(self, row_index: int, col_index: int) -> bool:
 
         """
@@ -218,13 +215,11 @@ class SudokuIteration:
 
         """
 
-        containing_values = self.grid.get_containing_values(row_index, col_index)
-
-        remaining_values = self.grid.get_remaining_values(containing_values)
+        possible_values = self.grid.possible_values(row_index, col_index)
 
         adjacent_rows, adjacent_cols = self.get_adjacent_units(row_index, col_index)
 
-        for value in remaining_values:
+        for value in possible_values:
 
             if value in adjacent_rows[0] and value in adjacent_rows[1] and value in adjacent_cols[0] and value in adjacent_cols[1]:
 
@@ -252,12 +247,12 @@ class SudokuIteration:
         
         """
 
-        start_row = (row_index // 3) * 3
-        start_col = (col_index // 3) * 3
+        start_row = (row_index // SUBGRID_SIZE) * SUBGRID_SIZE
+        start_col = (col_index // SUBGRID_SIZE) * SUBGRID_SIZE
 
-        adjacent_rows = [self.grid.get_row(start_row + index) for index in range(3) if (start_row + index) != row_index]
+        adjacent_rows = [self.grid.get_row(start_row + index) for index in range(SUBGRID_SIZE) if (start_row + index) != row_index]
 
-        adjacent_cols = [self.grid.get_col(start_col + index) for index in range(3) if (start_col + index) != col_index]
+        adjacent_cols = [self.grid.get_col(start_col + index) for index in range(SUBGRID_SIZE) if (start_col + index) != col_index]
 
         return adjacent_rows, adjacent_cols
 
@@ -277,32 +272,16 @@ class SudokuIteration:
         
         """
 
-        start_row = (row_index // 3) * 3
-        start_col = (col_index // 3) * 3
+        start_row = (row_index // SUBGRID_SIZE) * SUBGRID_SIZE
+        start_col = (col_index // SUBGRID_SIZE) * SUBGRID_SIZE
 
-        containing_rows = [self.grid.get_row(start_row + index) for index in range(3)]
+        containing_rows = [self.grid.get_row(start_row + index) for index in range(SUBGRID_SIZE)]
 
-        containing_cols = [self.grid.get_col(start_col + index) for index in range(3)]
+        containing_cols = [self.grid.get_col(start_col + index) for index in range(SUBGRID_SIZE)]
 
         containing_subgrid = self.grid.get_subgrid(row_index, col_index)
 
         return containing_subgrid, containing_rows, containing_cols
-
-
-
-    def populate_remaining_values_dict(self):
-
-        for row_index, col_index in self.grid.remaining_values_dict.keys():
-
-            if not self.validator.is_cell_empty(row_index, col_index):
-
-                continue
-
-            containing_values = self.grid.get_containing_values(row_index, col_index)
-
-            remaining_values = self.grid.get_remaining_values(containing_values)
-
-            self.grid.remaining_values_dict[(row_index, col_index)].extend(remaining_values)
 
 
 

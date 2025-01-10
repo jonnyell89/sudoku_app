@@ -4,6 +4,7 @@ from app.validator import SudokuValidator
 from app.generator import SudokuGenerator
 from app.recursion import SudokuRecursion
 from app.iteration import SudokuIteration
+from app.utils import print_formatted_grid
 
 __all__ = [
 
@@ -12,6 +13,7 @@ __all__ = [
     "SudokuValidator",
     "SudokuGenerator",
     "SudokuRecursion",
-    "SudokuIteration"
+    "SudokuIteration",
+    "print_formatted_grid"
     
 ]

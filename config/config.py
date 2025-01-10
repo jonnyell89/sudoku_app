@@ -1,0 +1,2 @@
+GRID_SIZE: int = 9
+SUBGRID_SIZE: int = 3

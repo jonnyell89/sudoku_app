@@ -5,8 +5,9 @@ from app.validator import SudokuValidator
 from app.generator import SudokuGenerator
 from app.recursion import SudokuRecursion
 from app.iteration import SudokuIteration
+from app.utils import print_formatted_grid
 
-from test.test_grids import (
+from app.library.grids import (
     
     empty_grid, 
     valid_grid, 
@@ -21,8 +22,10 @@ from test.test_grids import (
     extreme_grid, 
     brute_force, 
     mit, 
-    full_grid, 
-    test_grid
+    full_grid,
+    computerphile_valid_grid,
+    computerphile_invalid_grid,
+    demo_grid
 
 )
 
@@ -52,7 +55,7 @@ class SudokuFacade:
             validator (SudokuValidator): Validates cell placements and the overall integrity of the grid.
             recursion (SuokduRecursion): Creates or solves the grid using a recursive backtracking algorithm.
             generator (SudokuGenerator): Generates a puzzle by removing cells from the grid according to difficulty level.
-            iterative (SudokuIterative): Solves the grid using iterative logical deduction techniques.
+            iterative (SudokuIterative): Solves a puzzle using iterative logical deduction techniques.
         
         """
 
@@ -68,26 +71,22 @@ if __name__ == "__main__":
 
     print("--------------------")
 
-    sudoku = SudokuFacade(test_grid=easy_grid)
-
-    sudoku.grid.print_formatted_grid()
-
-    print("--------------------")
+    sudoku = SudokuFacade()
 
     sudoku.recursion.populate_grid()
 
-    sudoku.grid.print_formatted_grid()
+    sudoku.generator.generate_puzzle(target_removal=(81-17))
 
-    print("--------------------")
+    print(f"Is uinque solution: {sudoku.recursion.is_solution_unique()}")
 
-    print(sudoku.validator.is_grid_valid(debug=True))
+    print_formatted_grid(sudoku.grid.grid)
 
-    print("--------------------")
+    print(f"Total solutions: {sudoku.recursion.get_total_solutions(max_solutions=100)}")
 
-    sudoku.generator.remove_cells(difficulty_level="easy")
+    print_formatted_grid(sudoku.grid.grid)
 
-    sudoku.grid.print_formatted_grid()
+    print(f"Number of empty cells: {sudoku.grid.count_empty_cells()}")
 
-    print("--------------------")
+    sudoku.iteration.placement_techniques()
 
-    print(sudoku.validator.count_empty_cells())
+    print_formatted_grid(sudoku.grid.grid)

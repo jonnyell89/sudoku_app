@@ -1,11 +1,12 @@
 from typing import List, Tuple, Iterable, Callable
 
 from app.grid import SudokuGrid
+from config.config import GRID_SIZE
 
 class SudokuValidator:
 
     """
-    A class to validate cell placements and the overall integrity of a Sudoku grid.
+    A class to validate number placements and the overall integrity of a Sudoku grid.
     
     """
 
@@ -22,45 +23,10 @@ class SudokuValidator:
 
         self.grid = grid
 
-    # CELL VALIDATION
-
-    def is_valid(self, row_index: int, col_index: int, num: int) -> bool:
-
-        """
-        Checks if a number placement at the specified indices is valid within the rules of Sudoku.
-
-        Parameters:
-
-            row_index (int): The index position of the row in the grid.
-            col_index (int): The index position of the column in the grid.
-            num (int): The number to be checked, between 1 and 9.
-
-        Raises:
-
-            ValueError: If indices are out of the specified range.
-
-        Returns:
-
-            bool: True if the number placement is valid, otherwise False.
-            
-        """
-
-        if row_index not in range(9) or col_index not in range(9):
-
-            raise ValueError(f"row_index {row_index} col_index {col_index} must be within range 0 to 8.")
-
-        if num not in range(1, 10):
-
-            raise ValueError(f"num {num} must be within range 1 to 9.")
-        
-        containing_values = self.grid.get_containing_values(row_index, col_index)
-                
-        return num not in containing_values
-
     def populate_cell(self, row_index: int, col_index: int, num: int) -> bool:
 
         """
-        Attempts to place a number at the specified indices if the placement is valid and the cell is empty.
+        Attempts to place a number at the specified indices if the cell is empty and the placement is valid.
 
         Parameters:
 
@@ -74,7 +40,7 @@ class SudokuValidator:
 
         """
 
-        if self.is_cell_empty(row_index, col_index) and self.is_valid(row_index, col_index, num):
+        if self.grid.is_cell_empty(row_index, col_index) and self.is_valid(row_index, col_index, num):
 
             self.grid.grid[row_index][col_index] = num
 
@@ -82,84 +48,27 @@ class SudokuValidator:
         
         return False
 
-    def reset_cell(self, row_index: int, col_index: int) -> None:
-        
+    def is_valid(self, row_index: int, col_index: int, num: int) -> bool:
+
         """
-        Resets the cell to zero at the specified indices.
+        Checks if a number placement at the specified indices is valid within the rules of Sudoku.
 
         Parameters:
 
             row_index (int): The index position of the row in the grid.
             col_index (int): The index position of the column in the grid.
-        
-        """
-
-        self.grid.grid[row_index][col_index] = 0
-
-    def is_cell_empty(self, row_index: int, col_index: int) -> bool:
-
-        """
-        Checks if the specified cell is already empty.
-
-        Parameters:
-
-            row_index (int): The index position of the row in the grid.
-            col_index (int): The index position of the column in the grid.
+            num (int): The number to be checked, between 1 and 9.
 
         Returns:
 
-            bool: True if the specified cell is already empty, otherwise False.
-        
+            bool: True if the number placement is valid, otherwise False.
+            
         """
 
-        return self.grid.grid[row_index][col_index] == 0
-
-    def find_next_empty_cell(self) -> Tuple[int, int]:
-
-        """
-        Finds the next empty cell in the grid.
-
-        Returns:
-
-            Tuple[int, int]: The row and column indices of the next empty cell, or None if all cells are full.
-        
-        """
-
-        for row_index in range(len(self.grid.grid)):
-
-            for col_index in range(len(self.grid.grid)):
-
-                if self.is_cell_empty(row_index, col_index):
-
-                    return (row_index, col_index)
+        containing_values = self.grid.get_containing_values(row_index, col_index)
                 
-        return None
+        return num not in containing_values
     
-    def count_empty_cells(self) -> int:
-
-        """
-        Counts the total number of empty cells in the grid.
-
-        Returns:
-
-            int: The total number of cells with the value of zero.
-        
-        """
-
-        empty_cells = 0
-            
-        for row_index in range(len(self.grid.grid)):
-            
-            for col_index in range(len(self.grid.grid)):
-
-                if self.is_cell_empty(row_index, col_index):
-
-                    empty_cells += 1
-
-        return empty_cells
-    
-    # GRID VALIDATION
-
     def is_grid_valid(self, debug: bool = False) -> bool:
 
         """
@@ -175,9 +84,9 @@ class SudokuValidator:
         
         """
 
-        invalid_units = {unit_type: {} for unit_type, _, _ in self._get_units()}
+        invalid_units = {unit_type: {} for unit_type, _, _ in self._get_all_units()}
 
-        for unit_type, get_unit, indices in self._get_units():
+        for unit_type, get_unit, indices in self._get_all_units():
 
             for index in indices:
 
@@ -209,7 +118,7 @@ class SudokuValidator:
             
         return True
     
-    def _get_units(self) -> List[Tuple[str, Callable, Iterable[int]]]:
+    def _get_all_units(self) -> List[Tuple[str, Callable, Iterable[int]]]:
 
         """
         Returns the information required to access all rows, columns and subgrids.
@@ -222,8 +131,8 @@ class SudokuValidator:
 
         units = [
 
-            ("rows", self.grid.get_row, range(9)),
-            ("cols", self.grid.get_col, range(9)),
+            ("rows", self.grid.get_row, range(GRID_SIZE)),
+            ("cols", self.grid.get_col, range(GRID_SIZE)),
             ("subgrids", self.grid.get_subgrid, self.grid.get_subgrid_indices())
 
         ]
@@ -258,7 +167,7 @@ class SudokuValidator:
                 nums.add(num)
 
         return True
-
+    
 
 
 if __name__ == "__main__":

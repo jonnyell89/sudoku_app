@@ -1,57 +1,23 @@
-from typing import List, Tuple, Set
+from typing import List, Tuple
+
+from config.config import GRID_SIZE, SUBGRID_SIZE
 
 class SudokuGrid:
 
     """
-    A class to manage access to a 9X9 Sudoku grid.
+    A class to manage access to a Sudoku grid.
     
     """
 
-    def __init__(self, grid=None) -> None:
+    def __init__(self, grid: List[List[int]] = None) -> None:
 
         """
         Initialises SudokuGrid with an optional grid input, or generates an empty grid, if None is provided.
         
         """
 
-        self.grid = grid or [[0 for _ in range(9)] for _ in range(9)]
-
-        self.remaining_values_dict = {(row_index, col_index): [] for (row_index, col_index) in self.get_grid_indices()}
-
-    # PRINT
-
-    def print_formatted_grid(self) -> None:
-
-        """
-        Prints the grid as a two-dimensional matrix, with visual separators forming nine 3X3 subgrids.
-        
-        """
-
-        for row_index in range(len(self.grid)):
-
-            # Prints inner horizontal subgrid construction lines.
-            if row_index > 0 and row_index % 3 == 0:
-
-                print("-" * 15)
-
-            for col_index in range(len(self.grid)):
-
-                # Prints inner vertical subgrid construction lines.
-                if col_index > 0 and col_index % 3 == 0:
-
-                    print(" | ", end="")
-
-                if col_index == len(self.grid) - 1:
-
-                    # Ensures a new line after printing last cell in row.
-                    print(self.grid[row_index][col_index])
-
-                else:
-
-                    # Ensures each cell is printed on the same line.
-                    print(self.grid[row_index][col_index], end="")
-
-    # GET INITS
+        self.grid = grid or [[0] * GRID_SIZE for _ in range(GRID_SIZE)]
+        self.original = [row[:] for row in self.grid]
 
     def get_row(self, row_index: int) -> List[int]:
 
@@ -62,21 +28,11 @@ class SudokuGrid:
 
             row_index (int): The index position of the row in the grid.
 
-        Raises:
-
-            ValueError: If row_index is out of the specified range.
-
         Returns:
 
             List[int]: A list of integers representing the specified row from the grid.
         
         """
-
-        if row_index not in range(9):
-
-            raise ValueError(f"row_index {row_index} must be within range 0 to 8.")
-
-
 
         return self.grid[row_index]
     
@@ -89,21 +45,11 @@ class SudokuGrid:
 
             col_index (int): The index position of the column in the grid.
 
-        Raises:
-
-            ValueError: If col_index is out of the specified range.
-
         Returns:
 
             List[int]: A list of integers representing the specified column from the grid.
         
         """
-
-        if col_index not in range(9):
-
-            raise ValueError(f"col_index {col_index} must be within range 0 to 8.")
-        
-
 
         return [row[col_index] for row in self.grid]
     
@@ -117,30 +63,18 @@ class SudokuGrid:
             row_index (int): The index position of the row in the grid.
             col_index (int): The index position of the column in the grid.
 
-        Raises:
-
-            ValueError: If indices are out of the specified range.
-
         Returns:
 
             List[int]: A list of integers representing the specified subgrid from the grid.
         
         """
 
-        if row_index not in range(9) or col_index not in range(9):
+        start_row = (row_index // SUBGRID_SIZE) * SUBGRID_SIZE
+        start_col = (col_index // SUBGRID_SIZE) * SUBGRID_SIZE
 
-            raise ValueError(f"row_index {row_index} and col_index {col_index} must be within range 0 to 8.")
+        return [self.grid[start_row + x][start_col + y] for x in range(SUBGRID_SIZE) for y in range(SUBGRID_SIZE)]
 
-
-
-        start_row = (row_index // 3) * 3
-        start_col = (col_index // 3) * 3
-
-        return [self.grid[start_row + x][start_col + y] for x in range(3) for y in range(3)]
-
-
-
-    def get_containing_values(self, row_index: int, col_index: int) -> Set[int]:
+    def get_containing_values(self, row_index: int, col_index: int) -> List[int]:
 
         """
         Returns the values present in the containing row, column and subgrid of the specified cell.
@@ -152,39 +86,127 @@ class SudokuGrid:
 
         Returns:
 
-            Set[int]: A set of the values present in the containing row, column and subgrid of the specified cell.
+            List[int]: A list of the values present in the containing row, column and subgrid of the specified cell.
         
         """
 
-        containing_values = set(self.get_row(row_index)) | set(self.get_col(col_index)) | set(self.get_subgrid(row_index, col_index))
-
-        return containing_values
+        return list(set(self.get_row(row_index)) | set(self.get_col(col_index)) | set(self.get_subgrid(row_index, col_index)))
 
     def get_remaining_values(self, containing_values: List[int]) -> List[int]:
 
         """
-        Returns all remaining potential values for the specified cell.
+        Returns all remaining potential values for a specified cell.
 
         Parameters:
 
-            containing_values (List[int]): A list of the values present in the containing row, column and subgrid of the specified cell.
+            containing_values (List[int]): A list of the values present in the containing row, column and subgrid of a specified cell.
 
         Returns:
 
-            List[int]: A list of all remaining potential values for the specified cell.
+            List[int]: A list of all remaining potential values for a specified cell.
         
         """
 
-        remaining_values = [num for num in range(1, 10) if num not in containing_values]
+        return [num for num in range(1, 10) if num not in containing_values]
+    
+    def possible_values(self, row_index, col_index) -> List[int]:
 
-        return remaining_values
+        """
+        Returns all possible values for the specified cell.
 
+        Parameters:
 
+            row_index (int): The index position of the row in the grid.
+            col_index (int): The index position of the column in the grid.
+
+        Returns:
+
+            List[int]: A list of all possible values for the specified cell.
+        
+        """
+
+        return self.get_remaining_values(self.get_containing_values(row_index, col_index))
+    
+    def is_cell_empty(self, row_index: int, col_index: int) -> bool:
+
+        """
+        Checks if the specified cell is empty.
+
+        Parameters:
+
+            row_index (int): The index position of the row in the grid.
+            col_index (int): The index position of the column in the grid.
+
+        Returns:
+
+            bool: True if the specified cell is empty, otherwise False.
+        
+        """
+
+        return self.grid[row_index][col_index] == 0
+    
+    def reset_cell(self, row_index: int, col_index: int) -> None:
+        
+        """
+        Resets the cell to zero at the specified indices.
+
+        Parameters:
+
+            row_index (int): The index position of the row in the grid.
+            col_index (int): The index position of the column in the grid.
+        
+        """
+
+        self.grid[row_index][col_index] = 0
+    
+    def count_empty_cells(self) -> int:
+
+        """
+        Counts the total number of empty cells in the grid.
+
+        Returns:
+
+            int: The total number of cells with the value of zero.
+        
+        """
+
+        empty_cells = 0
+            
+        for row_index in range(GRID_SIZE):
+            
+            for col_index in range(GRID_SIZE):
+
+                if self.is_cell_empty(row_index, col_index):
+
+                    empty_cells += 1
+
+        return empty_cells
+    
+    def find_next_empty_cell(self) -> Tuple[int, int]:
+
+        """
+        Finds the next empty cell in the grid.
+
+        Returns:
+
+            Tuple[int, int]: The row and column indices of the next empty cell, or None if all cells are full.
+        
+        """
+
+        for row_index in range(GRID_SIZE):
+
+            for col_index in range(GRID_SIZE):
+
+                if self.is_cell_empty(row_index, col_index):
+
+                    return (row_index, col_index)
+                
+        return None
 
     def get_grid_indices(self) -> List[Tuple[int, int]]:
 
         """
-        Generates a list of indices for every cell in the grid.
+        Returns a list of indices for every cell in the grid.
 
         Returns:
 
@@ -192,9 +214,7 @@ class SudokuGrid:
         
         """
 
-        grid_indices = [(row_index, col_index) for row_index in range(len(self.grid)) for col_index in range(len(self.grid))]
-
-        return grid_indices
+        return [(row_index, col_index) for row_index in range(GRID_SIZE) for col_index in range(GRID_SIZE)]
 
     def get_subgrid_indices(self) -> List[Tuple[int, int]]:
 
@@ -207,10 +227,8 @@ class SudokuGrid:
         
         """
 
-        subgrid_indices = [(row_index, col_index) for row_index in (0, 3, 6) for col_index in (0, 3, 6)]
-
-        return subgrid_indices
-
+        return [(row_index, col_index) for row_index in (0, 3, 6) for col_index in (0, 3, 6)]
+    
     def get_empty_cell_indices(self) -> List[Tuple[int, int]]:
 
         """
@@ -222,9 +240,20 @@ class SudokuGrid:
         
         """
 
-        empty_cell_indices = [(row_index, col_index) for row_index in range(len(self.grid)) for col_index in range(len(self.grid)) if self.grid[row_index][col_index] == 0]
+        return [(row_index, col_index) for row_index in range(GRID_SIZE) for col_index in range(GRID_SIZE) if self.is_cell_empty(row_index, col_index)]
+    
+    def get_removable_cell_indices(self) -> List[Tuple[int, int]]:
 
-        return empty_cell_indices
+        """
+        Returns the row and column indices for all removable cells in the grid.
+
+        Returns:
+
+            List[Tuple[int, int]]: A list of tuples containing the row and column indices for all removable cells in the grid.
+        
+        """
+
+        return [(row_index, col_index) for row_index in range(GRID_SIZE) for col_index in range(GRID_SIZE) if not self.is_cell_empty(row_index, col_index)]
 
 
 

@@ -1,22 +1,8 @@
-from test.test_grids import empty_grid, valid_grid, invalid_row, invalid_col, invalid_subgrid, easy_grid, medium_grid, hard_grid, expert_grid, master_grid, extreme_grid, brute_force, mit, full_grid, test_grid
+from test.test_grid import test_empty_grid_initialisation, test_full_grid_initialisation
 
 __all__ = [
 
-    "empty_grid",
-    "valid_grid",
-    "invalid_grid",
-    "invalid_row",
-    "invalid_col",
-    "invalid_subgrid",
-    "easy_grid",
-    "medium_grid",
-    "hard_grid",
-    "expert_grid",
-    "master_grid",
-    "extreme_grid",
-    "brute_force",
-    "mit",
-    "full_grid",
-    "test_grid"
-    
+    "test_empty_grid_initialisation",
+    "test_full_grid_initialisation"
+
 ]
